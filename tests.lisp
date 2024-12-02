@@ -25,6 +25,17 @@
 (test "or" (exp->nnf '(or a b)) '(or a b))
 (test "not or" (exp->nnf '(not (or a (not b)))) '(and (not a) b))
 
+(format t "~%")
+
+(test "dist 1" (nnf->cnf '(or a (and b c))) '(and (or a b) (or a c)))
+(test "dist 2" (nnf->cnf '(or x (and a b c))) '(and (or a x) (or b x) (or c x)))
+(test "dist 3" (nnf->cnf '(or (or x y) (and b c))) '(and (or b x y) (or c x y)))
+(test "dist 4" (nnf->cnf '(or (or x y z) (and b c))) '(and (or b x y z) (or c x y z)))
+
+(format t "~%")
+
+(test "dist 5" (nnf->cnf '(or (and x y) (and b c))) '(and (or b x) (or b y) (or c x) (or c y)))
+(test "dist 6" (nnf->cnf '(or (and x y z) (and a b c))) '(and (or a x) (or a y) (or a z) (or b x) (or b y) (or b z) (or c x) (or c y) (or c z)))
 
 
 (exit)

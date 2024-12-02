@@ -261,7 +261,16 @@ That is: T"
   (assert (every #'lit-p literals))
   (assert (cnf-p and-exp))
   `(or ,@literals ,and-exp)
-  (TODO '%dist-or-and-1))
+  (labels ((h (l and-e)
+              (if (eq and-e 'and)
+                  l
+                  (cons 
+                    (append '(or) (sort-vars (append literals (cdr and-e))))
+                    l 
+                  ))
+              ))
+  (cons 'and (fold #'h nil and-exp)))
+)
 
 ;; Distribute OR over two AND expressions:
 ;;
@@ -273,7 +282,20 @@ That is: T"
   (assert (cnf-p and-exp-1))
   (assert (cnf-p and-exp-2))
   `(or ,and-exp-1 ,and-exp-2)
-  (TODO '%dist-or-and-and))
+  (labels ((h (l and-e-1)
+              (if (eq and-e-1 'and)
+                  l
+                  (append 
+                    (fold 
+                      (lambda (output and-e-2) (if (eq and-e-2 'and) output (cons (append '(or) (sort-vars (append (cdr and-e-1) (cdr and-e-2)))) output))) 
+                      nil 
+                      and-exp-2
+                    )
+                    l 
+                  ))
+              ))
+  (cons 'and (fold #'h nil and-exp-1)))
+)
 
 ;; Distribute n-ary OR over the AND arguments:
 ;;
