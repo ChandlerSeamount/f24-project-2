@@ -122,20 +122,29 @@ If LIST already contains ELEMENT, LIST is returned unchanged"
                    (case op
                      (:implies
                       (destructuring-bind (a b) args
-                        (TODO 'exp->nnf-implies)))
+                        (visit (list 'or (list 'not a) b) truth)))
                      (:xor
                       (destructuring-bind (a b) args
-                        (TODO 'exp->nnf-xor)))
+                        (visit (list 'and (list 'or a b) (list 'or (list 'not a) (list 'not b))) truth)))
                      (:iff
                       (destructuring-bind (a b) args
-                        (TODO 'exp->nnf-iff)))
+                        (visit (list 'and (list :implies a b) (list :implies b a)) truth)
+                        ))
                      (not
                       (assert (and args (null (cdr args))))
                       (visit (car args) (not truth)))
                      (and
-                      (TODO 'exp->nnf-and))
+                      (labels ((h (l arg) (append l (list (visit arg truth)))))
+                        (if truth 
+                            (append '(and) (fold #'h nil args))
+                            (append '(or) (fold #'h nil args)))
+                     ))
                      (or
-                      (TODO 'exp->nnf-or))
+                      (labels ((h (l arg) (append l (list (visit arg truth)))))
+                        (if truth 
+                            (append '(or) (fold #'h nil args))
+                            (append '(and) (fold #'h nil args)))
+                     ))
                      (otherwise
                       (base e truth)))))))
 
