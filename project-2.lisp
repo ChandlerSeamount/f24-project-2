@@ -431,7 +431,23 @@ Returns: (VALUES maxterms (LIST bindings-literals...))"
   (assert (every #'maxterm-p maxterms))
   (assert (every #'lit-p bindings))
   ;; HINT: use DPLL-BIND
-  (TODO 'dpll-unit-propagate))
+  (labels ((unit_h (term max bin same)
+  (if (null term)
+    (values max bin same)
+    (let ((x (car term)))
+    (if (maxterm-unit-p x)
+      (multiple-value-bind (new_terms new_bindings)
+        (dpll-bind max (second x) bin)
+        (unit_h (cdr term) new_terms new_bindings nil))
+      (unit_h (cdr term) max bin same))))
+  ))
+  (multiple-value-bind (new_terms new_bindings same)
+  (unit_h maxterms maxterms bindings t)
+    (if same
+      (values maxterms bindings)
+      (dpll-unit-propagate new_terms new_bindings))))
+  
+  ) 
 
 
 (defun dpll-choose-literal (maxterms)
