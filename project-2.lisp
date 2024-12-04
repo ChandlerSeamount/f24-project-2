@@ -480,7 +480,11 @@ Returns: (VALUES (OR T NIL) (LIST bindings-literals...))"
       ((some #'maxterm-false-p maxterms) ; Base case: some maxterm is false
        (values nil bindings))
       (t ; Recursive case
-       (TODO 'dpll)))))
+       (TODO 'dpll)
+      )
+    )
+  )
+)
 
 (defun sat-p (e)
   "Check satisfiability of e."
