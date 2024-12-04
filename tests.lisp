@@ -56,6 +56,43 @@
 ; (test "bin propagate true" new_bindings '((not p0))))
 ; (test "sat-0" (sat-p '(and (not p0) (:iff p1 p3) (:iff p1 p3))) 'a)
 
+; (multiple-value-bind (new_terms new_bindings) (dpll-unit-propagate (cdr (exp->cnf '(and (not p0) (or p1 p2)))) NIL)
+; (test "max propagate leftover" new_terms '((or p1 p2)))
+; (test "bin propagate leftover" new_bindings '((not p0))))
+; (multiple-value-bind (new_terms new_bindings) (dpll-unit-propagate (cdr (exp->cnf '(and (not p0) (or p0 p2)))) NIL)
+; (test "max propagate none" new_terms '())
+; (test "bin propagate none" new_bindings '(p2 (not p0))))
+; (multiple-value-bind (new_terms new_bindings) (dpll-unit-propagate (cdr (exp->cnf '(and (not p0) (:iff p1 p3) (:iff p1 p3)))) NIL)
+; (test "max propagate iff" new_terms '((OR P3 (NOT P1)) (OR P1 (NOT P3)) (OR P3 (NOT P1)) (OR P1 (NOT P3))))
+; (test "bin propagate iff" new_bindings '((not p0))))
+; (multiple-value-bind (new_terms new_bindings) (dpll-unit-propagate (cdr (exp->cnf '(and (not p0) (not p2) (or p0 p2)))) NIL)
+; (test "max propagate false" new_terms '((or)))
+; (test "bin propagate false" new_bindings '()))
+; (multiple-value-bind (new_terms new_bindings) (dpll-unit-propagate (cdr (exp->cnf '(and a (or a b)))) NIL)
+; (test "max propagate true" new_terms '())
+; (test "bin propagate true" new_bindings '(a)))
+
+(format t "~%")
+
+(multiple-value-bind (new_terms new_bindings) (dpll (cdr (exp->cnf '(and a (or a b)))) NIL)
+(test "max dpll true" new_terms 't)
+(test "bin dpll true" new_bindings '(a))
+(test "propogate true 1" (check-bindings new_terms new_bindings) T))
+(multiple-value-bind (new_terms new_bindings) (dpll (cdr (exp->cnf '(and (not p0) (not p2) (or p0 p2)))) NIL)
+(test "max dpll false" new_terms nil)
+(test "bin dpll false" new_bindings '((not p0))))
+(multiple-value-bind (new_terms new_bindings) (dpll (cdr (exp->cnf '(and (not p0) (:iff p1 p3) (:iff p1 p3)))) NIL)
+(test "max dpll other" new_terms t)
+(test "bin dpll other" new_bindings '(p3 (not p0))))
+
+(format t "~%")
+
+; (test "sat-0" (sat-p '(and (not p0) (:iff p1 p3) (:iff p1 p3))) t)
+; (test "sat-1" (sat-p '(and (not p2) (or p0 p0 p1) (not p2))) t)
+; (test "sat-2" (sat-p '(:implies (:xor p3 p0) (not p2))) t)
+
+
+
 (multiple-value-bind (new_terms new_bindings) (dpll-unit-propagate (cdr (exp->cnf '(and a (or b (not a))))) NIL)
 (test "propogate true 1" (check-bindings new_terms new_bindings) T))
 
