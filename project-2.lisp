@@ -258,6 +258,7 @@ That is: T"
 ;;
 ;; The result is in conjunctive normal form
 (defun %dist-or-and-1 (literals and-exp)
+  ; (format t "~A ~% ~A ~%" literals and-exp)
   (assert (every #'lit-p literals))
   (assert (cnf-p and-exp))
   `(or ,@literals ,and-exp)
@@ -265,7 +266,7 @@ That is: T"
               (if (eq and-e 'and)
                   l
                   (cons 
-                    (append '(or) (sort-vars (append literals (cdr and-e))))
+                    (append '(or) (append literals (cdr and-e))); this line before last append 
                     l 
                   ))
               ))
@@ -287,7 +288,7 @@ That is: T"
                   l
                   (append 
                     (fold 
-                      (lambda (output and-e-2) (if (eq and-e-2 'and) output (cons (append '(or) (sort-vars (append (cdr and-e-1) (cdr and-e-2)))) output))) 
+                      (lambda (output and-e-2) (if (eq and-e-2 'and) output (cons (append '(or) (append (cdr and-e-1) (cdr and-e-2))) output))) ; this line before last append 
                       nil 
                       and-exp-2
                     )
@@ -376,6 +377,18 @@ That is: T"
   "Convert an expression to conjunctive normal form."
   (nnf->cnf (exp->nnf e)))
 
+;; Sorting is useful to remove redundant (equivalent) clauses from
+;; expressions
+(defun sort-lits (lits)
+  "Sort list of variables in lexicographic order."
+  (assert (every #'lit-p lits))
+  (append
+    (sort-vars (fold (lambda (out in) (if (var-p in) (cons in out) out)) nil lits))
+    (fold (lambda (out in) (if (not (var-p in)) (cons in out) out)) nil lits)
+  )
+)
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Part 1: DAVIS-PUTNAM-LOGEMANN-LOVELAND (DPLL) ;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -435,11 +448,11 @@ Returns: (VALUES maxterms (LIST bindings-literals...))"
   (if (null term)
     (values max bin same)
     (let ((x (car term)))
-    (format t "~a is unit ~b~%" x (maxterm-unit-p x))
+    ; (format t "~a is unit ~b~%" x (maxterm-unit-p x))
     (if (maxterm-unit-p x)
       (multiple-value-bind (new_terms new_bindings)
         (dpll-bind max (second x) bin)
-        (format t "~a~%" new_bindings)
+        ; (format t "~a~%" new_bindings)
         (unit_h (cdr term) new_terms new_bindings nil))
       (unit_h (cdr term) max bin same))))
   ))
@@ -484,13 +497,13 @@ Returns: (VALUES (OR T NIL) (LIST bindings-literals...))"
        (values nil bindings))
       (t ; Recursive case
        (let ((v (dpll-choose-literal maxterms)))
-       (format t "~a~%" v)
+      ;  (format t "~a~%" v)
        (multiple-value-bind (maxterms1 bindings1) (dpll-bind maxterms v bindings)
         (multiple-value-bind (is_sat bindings1) (dpll maxterms1 bindings1)
           (if is_sat
         (values t bindings1)
         (multiple-value-bind (maxterms2 bindings2) (dpll-bind maxterms (list 'not v) bindings)
-        (format t "here")
+        ; (format t "here")
        (dpll maxterms2 bindings2))))))
         ))))
 

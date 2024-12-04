@@ -25,7 +25,11 @@
 (test "or" (exp->nnf '(or a b)) '(or a b))
 (test "not or" (exp->nnf '(not (or a (not b)))) '(and (not a) b))
 
+(test "(c xor a) implies not b -> nnf" (exp->nnf '(:implies (:xor c a) (not b))) '(or (or (and (not c) (not a)) (and c a)) (not b)))
+(test "(c xor a) implies not b -> cnf" (exp->cnf '(:implies (:xor c a) (not b))) '(or (or (and (not c) (not a)) (and c a)) (not b)))
+
 (format t "~%")
+(test "sort-lits with not" (sort-lits '(a (not b))) '(a (not b)))
 
 (test "dist 1" (nnf->cnf '(or a (and b c))) '(and (or a b) (or a c)))
 (test "dist 2" (nnf->cnf '(or x (and a b c))) '(and (or a x) (or b x) (or c x)))
@@ -40,7 +44,7 @@
 (format t "~%")
 
 (multiple-value-bind (new_terms new_bindings) (dpll-unit-propagate (cdr (exp->cnf '(and a (or b (not a))))) NIL)
-(test "T leftover term" new_terms T)
+(test "nil leftover term" new_terms nil)
 (test "propagation bindings" new_bindings '(b a)) 
 (test "propogate true 1" (check-bindings new_terms new_bindings) T))
 
@@ -69,16 +73,33 @@
 (test "sat false 1" is_sat Nil)
 (test "sat false 1 bindings" new_bindings Nil))
 
-; (multiple-value-bind (is_sat new_bindings) (sat-p '(and (not a) (:iff b c)))
-; (test "sat-0" is_sat T)
-; (test "sat-0 bindings" new_bindings '((not a) b c)))
-
 (multiple-value-bind (is_sat new_bindings) (sat-p '(and a (or b c)))
 (test "sat true 2" is_sat T)
 (test "sat true 2 bindings" new_bindings '(b a)))
 
-(multiple-value-bind (is_sat new_bindings) (sat-p '(and a (or (not b) (not c))))
+(multiple-value-bind (is_sat new_bindings) (sat-p '(and a (and b c)))
 (test "sat true 3" is_sat T)
-(test "sat true 3 bindings" new_bindings '(b a)))
+(test "sat true 3 bindings" new_bindings '(a b c)))
+
+(multiple-value-bind (is_sat new_bindings) (sat-p '(and a (or (not b) (not c))))
+(test "sat true 4" is_sat T)
+(test "sat true 4 bindings" new_bindings '((not c) b a)))
+
+(multiple-value-bind (is_sat new_bindings) (sat-p '(and (not a) (:iff b c)))
+(test "sat-0" is_sat T)
+(test "sat-0 bindings" new_bindings '(b c (not a))))
+
+(multiple-value-bind (is_sat new_bindings) (sat-p '(and (not c) (or a a b) (not c)))
+(test "sat-1a" is_sat T)
+(test "sat-1a bindings" new_bindings '(a (not c))))
+
+(multiple-value-bind (is_sat new_bindings) (sat-p '(and (not c) (or a a b) c))
+(test "sat-1b" is_sat Nil)
+(test "sat-1b bindings" new_bindings Nil))
+
+(multiple-value-bind (is_sat new_bindings) (sat-p '(:implies (:xor c a) (not b)))
+(test "sat-2" is_sat T)
+(test "sat-2 bindings" new_bindings '(b c (not a))))
+
 
 (exit)
