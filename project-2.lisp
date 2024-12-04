@@ -435,12 +435,12 @@ Returns: (VALUES maxterms (LIST bindings-literals...))"
   (if (null term)
     (values max bin same)
     (let ((x (car term)))
-    (format t "~a is unit ~b~%" x (maxterm-unit-p x))
+    ; (format t "~a is unit ~b~%" x (maxterm-unit-p x))
     (if (maxterm-unit-p x)
       (multiple-value-bind (new_terms new_bindings)
         (dpll-bind max (second x) bin)
-        (format t "~a~%" new_bindings)
-        (unit_h (cdr term) new_terms new_bindings nil))
+        ; (format t "~a~%" term)
+        (unit_h new_terms new_terms new_bindings nil))
       (unit_h (cdr term) max bin same))))
   ))
   (multiple-value-bind (new_terms new_bindings same)
@@ -484,19 +484,20 @@ Returns: (VALUES (OR T NIL) (LIST bindings-literals...))"
        (values nil bindings))
       (t ; Recursive case
        (let ((v (dpll-choose-literal maxterms)))
-       (format t "~a~%" v)
+      ;  (format t "~a~%" v)
        (multiple-value-bind (maxterms1 bindings1) (dpll-bind maxterms v bindings)
         (multiple-value-bind (is_sat bindings1) (dpll maxterms1 bindings1)
           (if is_sat
         (values t bindings1)
         (multiple-value-bind (maxterms2 bindings2) (dpll-bind maxterms (list 'not v) bindings)
-        (format t "here")
+        
        (dpll maxterms2 bindings2))))))
         ))))
 
 (defun sat-p (e)
   "Check satisfiability of e."
   (let ((maxterms (cdr (exp->cnf e))))
+    (format t "here")
     (multiple-value-bind (is-sat bindings)
         (dpll maxterms nil)
       ;; sanity checking

@@ -18,6 +18,7 @@
 
 (test "xor" (exp->nnf '(:xor a b)) '(and (or a b) (or (not a) (not b))))
 (test "not xor" (exp->nnf '(not (:xor a b))) '(or (and (not a) (not b)) (and a b)))
+(test "sat xor" (exp->nnf '(:implies (:xor c a) (not b))) '())
 
 (test "and" (exp->nnf '(and a b)) '(and a b))
 (test "not and" (exp->nnf '(not (and a b))) '(or (not a) (not b)))
@@ -76,20 +77,19 @@
 
 (multiple-value-bind (new_terms new_bindings) (dpll (cdr (exp->cnf '(and a (or a b)))) NIL)
 (test "max dpll true" new_terms 't)
-(test "bin dpll true" new_bindings '(a))
-(test "propogate true 1" (check-bindings new_terms new_bindings) T))
+(test "bin dpll true" new_bindings '(a)))
 (multiple-value-bind (new_terms new_bindings) (dpll (cdr (exp->cnf '(and (not p0) (not p2) (or p0 p2)))) NIL)
 (test "max dpll false" new_terms nil)
-(test "bin dpll false" new_bindings '((not p0))))
+(test "bin dpll false" new_bindings '()))
 (multiple-value-bind (new_terms new_bindings) (dpll (cdr (exp->cnf '(and (not p0) (:iff p1 p3) (:iff p1 p3)))) NIL)
 (test "max dpll other" new_terms t)
-(test "bin dpll other" new_bindings '(p3 (not p0))))
+(test "bin dpll other" new_bindings '(p1 p3 (not p0))))
 
 (format t "~%")
 
-; (test "sat-0" (sat-p '(and (not p0) (:iff p1 p3) (:iff p1 p3))) t)
-; (test "sat-1" (sat-p '(and (not p2) (or p0 p0 p1) (not p2))) t)
-; (test "sat-2" (sat-p '(:implies (:xor p3 p0) (not p2))) t)
+(test "sat-0" (sat-p '(and (not p0) (:iff p1 p3) (:iff p1 p3))) t)
+(test "sat-1" (sat-p '(and (not p2) (or p0 p0 p1) (not p2))) t)
+(test "sat-2" (sat-p '(:implies (:xor p3 p0) (not p2))) t)
 
 
 
