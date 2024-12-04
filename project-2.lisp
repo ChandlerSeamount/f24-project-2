@@ -470,6 +470,7 @@ RETURNS: a literal"
 (defun dpll (maxterms bindings)
 "Recursive DPLL routine.
 Returns: (VALUES (OR T NIL) (LIST bindings-literals...))"
+
   (assert (every #'maxterm-p maxterms))
   (assert (every #'lit-p bindings))
   (multiple-value-bind (maxterms bindings)
@@ -480,7 +481,14 @@ Returns: (VALUES (OR T NIL) (LIST bindings-literals...))"
       ((some #'maxterm-false-p maxterms) ; Base case: some maxterm is false
        (values nil bindings))
       (t ; Recursive case
-       (TODO 'dpll)))))
+       (let ((v (dpll-choose-literal maxterms)))
+       (format t "~a~%" v)
+       (multiple-value-bind (maxterms1 bindings1) (dpll-bind maxterms v bindings)
+        (if (dpll maxterms1 bindings1)
+        (values t bindings1)
+        (multiple-value-bind (maxterms2 bindings2) (dpll-bind maxterms (cdr (exp->cnf (list 'not v))) bindings)
+       (dpll maxterms2 bindings2)))))
+        ))))
 
 (defun sat-p (e)
   "Check satisfiability of e."
