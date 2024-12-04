@@ -75,6 +75,7 @@
 
 (format t "~%")
 
+
 (multiple-value-bind (new_terms new_bindings) (dpll (cdr (exp->cnf '(and a (or a b)))) NIL)
 (test "max dpll true" new_terms 't)
 (test "bin dpll true" new_bindings '(a)))
@@ -85,6 +86,7 @@
 (test "max dpll other" new_terms t)
 (test "bin dpll other" new_bindings '(p1 p3 (not p0))))
 
+
 (format t "~%")
 
 (test "sat-0" (sat-p '(and (not p0) (:iff p1 p3) (:iff p1 p3))) t)
@@ -94,6 +96,8 @@
 
 
 (multiple-value-bind (new_terms new_bindings) (dpll-unit-propagate (cdr (exp->cnf '(and a (or b (not a))))) NIL)
+(test "T leftover term" new_terms T)
+(test "propagation bindings" new_bindings '(b a)) 
 (test "propogate true 1" (check-bindings new_terms new_bindings) T))
 
 (multiple-value-bind (new_terms new_bindings) (dpll-unit-propagate (cdr (exp->cnf '(and a (and b (not a))))) NIL)
@@ -106,8 +110,31 @@
 
 (format t "~%")
 
-(multiple-value-bind (new_terms new_bindings) (dpll (cdr (exp->cnf '(and a (or b (not a))))) NIL)
-(test "dpll true 1" (check-bindings new_terms new_bindings) Nil))
+(multiple-value-bind (is_sat new_bindings) (dpll (cdr (exp->cnf '(and a (or b (not a))))) NIL)
+(test "dpll is_sat true" is_sat T)
+(test "dpll bindings" new_bindings '(b a))
+(test "dpll true 1" (check-bindings (cdr (exp->cnf '(and a (or b (not a))))) new_bindings) T))
 
-                
+(format t "~%")
+
+(multiple-value-bind (is_sat new_bindings) (sat-p '(and a (or b (not a))))
+(test "sat true 1" is_sat T)
+(test "sat true 1 bindings" new_bindings '(b a)))
+
+(multiple-value-bind (is_sat new_bindings) (sat-p '(and a (and b (not a))))
+(test "sat false 1" is_sat Nil)
+(test "sat false 1 bindings" new_bindings Nil))
+
+; (multiple-value-bind (is_sat new_bindings) (sat-p '(and (not a) (:iff b c)))
+; (test "sat-0" is_sat T)
+; (test "sat-0 bindings" new_bindings '((not a) b c)))
+
+(multiple-value-bind (is_sat new_bindings) (sat-p '(and a (or b c)))
+(test "sat true 2" is_sat T)
+(test "sat true 2 bindings" new_bindings '(b a)))
+
+(multiple-value-bind (is_sat new_bindings) (sat-p '(and a (or (not b) (not c))))
+(test "sat true 3" is_sat T)
+(test "sat true 3 bindings" new_bindings '(b a)))
+
 (exit)

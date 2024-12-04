@@ -258,6 +258,7 @@ That is: T"
 ;;
 ;; The result is in conjunctive normal form
 (defun %dist-or-and-1 (literals and-exp)
+  ; (format t "~A ~% ~A ~%" literals and-exp)
   (assert (every #'lit-p literals))
   (assert (cnf-p and-exp))
   `(or ,@literals ,and-exp)
@@ -265,7 +266,7 @@ That is: T"
               (if (eq and-e 'and)
                   l
                   (cons 
-                    (append '(or) (sort-vars (append literals (cdr and-e))))
+                    (append '(or) (append literals (cdr and-e))); this line before last append 
                     l 
                   ))
               ))
@@ -287,7 +288,7 @@ That is: T"
                   l
                   (append 
                     (fold 
-                      (lambda (output and-e-2) (if (eq and-e-2 'and) output (cons (append '(or) (sort-vars (append (cdr and-e-1) (cdr and-e-2)))) output))) 
+                      (lambda (output and-e-2) (if (eq and-e-2 'and) output (cons (append '(or) (append (cdr and-e-1) (cdr and-e-2))) output))) ; this line before last append 
                       nil 
                       and-exp-2
                     )
@@ -375,6 +376,18 @@ That is: T"
 (defun exp->cnf (e)
   "Convert an expression to conjunctive normal form."
   (nnf->cnf (exp->nnf e)))
+
+;; Sorting is useful to remove redundant (equivalent) clauses from
+;; expressions
+(defun sort-lits (lits)
+  "Sort list of variables in lexicographic order."
+  (assert (every #'lit-p lits))
+  (append
+    (sort-vars (fold (lambda (out in) (if (var-p in) (cons in out) out)) nil lits))
+    (fold (lambda (out in) (if (not (var-p in)) (cons in out) out)) nil lits)
+  )
+)
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Part 1: DAVIS-PUTNAM-LOGEMANN-LOVELAND (DPLL) ;;;
@@ -490,7 +503,7 @@ Returns: (VALUES (OR T NIL) (LIST bindings-literals...))"
           (if is_sat
         (values t bindings1)
         (multiple-value-bind (maxterms2 bindings2) (dpll-bind maxterms (list 'not v) bindings)
-        
+
        (dpll maxterms2 bindings2))))))
         ))))
 
