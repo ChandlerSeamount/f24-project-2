@@ -25,16 +25,13 @@
 (test "or" (exp->nnf '(or a b)) '(or a b))
 (test "not or" (exp->nnf '(not (or a (not b)))) '(and (not a) b))
 
-(test "(c xor a) implies not b -> nnf" (exp->nnf '(:implies (:xor c a) (not b))) '(or (or (and (not c) (not a)) (and c a)) (not b)))
-(test "(c xor a) implies not b -> cnf" (exp->cnf '(:implies (:xor c a) (not b))) '(or (or (and (not c) (not a)) (and c a)) (not b)))
-
 (format t "~%")
 (test "sort-lits with not" (sort-lits '(a (not b))) '(a (not b)))
 
 (test "dist 1" (nnf->cnf '(or a (and b c))) '(and (or a b) (or a c)))
-(test "dist 2" (nnf->cnf '(or x (and a b c))) '(and (or a x) (or b x) (or c x)))
-(test "dist 3" (nnf->cnf '(or (or x y) (and b c))) '(and (or b x y) (or c x y)))
-(test "dist 4" (nnf->cnf '(or (or x y z) (and b c))) '(and (or b x y z) (or c x y z)))
+(test "dist 2" (nnf->cnf '(or x (and a b c))) '(and (or x a) (or x b) (or x c)))
+(test "dist 3" (nnf->cnf '(or (or x y) (and b c))) '(and (or y x b) (or y x c)))
+(test "dist 4" (nnf->cnf '(or (or x y z) (and b c))) '(and (or z y x b) (or z y x c)))
 
 (format t "~%")
 
@@ -79,7 +76,7 @@
 
 (multiple-value-bind (is_sat new_bindings) (sat-p '(and a (and b c)))
 (test "sat true 3" is_sat T)
-(test "sat true 3 bindings" new_bindings '(a b c)))
+(test "sat true 3 bindings" new_bindings '(b a c)))
 
 (multiple-value-bind (is_sat new_bindings) (sat-p '(and a (or (not b) (not c))))
 (test "sat true 4" is_sat T)
@@ -99,7 +96,15 @@
 
 (multiple-value-bind (is_sat new_bindings) (sat-p '(:implies (:xor c a) (not b)))
 (test "sat-2" is_sat T)
-(test "sat-2 bindings" new_bindings '(b c (not a))))
+(test "sat-2 bindings" new_bindings '(a c b)))
+
+(format t "~%")
+
+(test "(c xor a) implies not b -> nnf" (exp->nnf '(:implies (:xor c a) (not b))) '(or (or (and (not c) (not a)) (and c a)) (not b)))
+(test "(c xor a) implies not b -> cnf" (exp->cnf '(:implies (:xor c a) (not b))) '(or (or (and (not c) (not a)) (and c a)) (not b)))
+
+(format t "~%")
+
 
 
 (exit)

@@ -184,12 +184,12 @@
                      :direction :output
                      :if-exists :supersede
                      :if-does-not-exist :create)
-  (format t "~a" val))
-  (with-open-file (str "/mutual.txt"
+  (format str "~a" val))
+  (with-open-file (str "mutual.txt"
                      :direction :output
                      :if-exists :supersede
                      :if-does-not-exist :create)
-  (format t "~a" mut)))
+  (format str "~a" mut)))
   )
 
 (let ((start '((onpeg d1 p1)
