@@ -1,7 +1,7 @@
 (define (problem ThreePeg-TwoDisk)
     (:domain hanoi)
   (:objects p1 p2 p3 d1 d2)
-  (:goal (and (onpeg d2 p3)(ontable d2)(on d1 d2)))
+  (:goal (and (onpeg d2 p3) (ontable d2) (on d1 d2)))
   (:init (onpeg d1 p1)
   		 (onpeg d2 p1)
   		 (on d1 d2)

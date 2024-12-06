@@ -510,7 +510,7 @@ Returns: (VALUES (OR T NIL) (LIST bindings-literals...))"
 (defun sat-p (e)
   "Check satisfiability of e."
   (let ((maxterms (cdr (exp->cnf e))))
-    (format t "here")
+    ; (format t "here")
     (multiple-value-bind (is-sat bindings)
         (dpll maxterms nil)
       ;; sanity checking
