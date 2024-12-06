@@ -146,7 +146,7 @@
     (let ((action (second (car actions))) (pars (car (cdr (third (car actions))))) (pre (cdr (car (cdr (fourth (car actions)))))) (eff (cdr (car (cdr (fifth (car actions)))))))
         ; (format t "~a~%~b~%" pre eff)
         
-        (DELETE-DUPLICATES (append (for-every-p1 pre eff turn action pars) (get-all-actions (cdr actions) turn)))
+        (cons 'and (DELETE-DUPLICATES (append (for-every-p1 pre eff turn action pars) (get-all-actions (cdr actions) turn))))
     ))
 )
 
@@ -158,13 +158,13 @@
         (t (cons (list 'not (car poss-act)) (h (cdr poss-act) act)))))
         (h2 (poss-act)
         (if (null poss-act) nil
-        (cons (list ':implies (car poss-act) (h possible-actions (car poss-act))) (h2 (cdr poss-act))))))
+        (cons (list ':implies (car poss-act) (cons 'and (h possible-actions (car poss-act)))) (h2 (cdr poss-act))))))
         (cons 'and (h2 possible-actions))
         )
     )
 )
 
-(defun turns (actions)
+(defun turns (actions preds)
     (labels ((get-validity (turn)
     (if (> turn 5)
     nil
@@ -173,13 +173,17 @@
     (if (> turn 5)
     nil
     (cons (mutual-exclusion actions turn) (get-mutual (+ 1 turn)))))
+    (get-axioms (turn)
+    (if (> turn 5)
+    nil
+    (cons (get-axiom preds turn) (get-axioms (+ 1 turn)))))
     )
-    (values (get-validity 0) (get-mutual 0)))
+    (values (get-validity 0) (get-mutual 0) (cons 'and (get-axioms 0))))
     
 )
 
-(defun get-outputs (actions)
-(multiple-value-bind (val mut) (turns actions)
+(defun get-outputs (actions preds)
+(multiple-value-bind (val mut ax) (turns actions preds)
     (with-open-file (str "validity.txt"
                      :direction :output
                      :if-exists :supersede
@@ -189,8 +193,48 @@
                      :direction :output
                      :if-exists :supersede
                      :if-does-not-exist :create)
-  (format str "~a" mut)))
+  (format str "~a" mut))
+  (with-open-file (str "axiom.txt"
+                     :direction :output
+                     :if-exists :supersede
+                     :if-does-not-exist :create)
+  (format str "~a" ax)))
   )
+
+(defun get-act (d1 d2 p pred actions turn)
+    (labels ((h (y str)
+        (cond ((null y) str)
+        ((eq (car y) '?disk) (concatenate 'string (symbol-name d1) "-" (h (cdr y) str)))
+        ((eq (car y) '?peg) (concatenate 'string (symbol-name p) "-" (h (cdr y) str)))
+        ((eq (car y) '?disk1) (concatenate 'string (symbol-name d1) "-" (h (cdr y) str)))
+        ((eq (car y) '?disk2) (concatenate 'string (symbol-name d2) "-" (h (cdr y) str)))
+        (t (concatenate 'string (symbol-name (car y)) "-" (h (cdr y) str)))
+    ))
+    (h2 (y str)
+        (if (null y)
+        nil
+        (cons (h (car y) str) (h2 (cdr y) str)))
+    ))
+    (let ((prop (with-output-to-string (my-int) (princ turn my-int))) (prop2 (with-output-to-string (my-int) (princ (+ 1 turn) my-int))))
+        (list ':or (list ':iff (h pred prop) (h pred prop2)) (h2 actions prop))
+    )
+    )
+)
+
+(defun get-ds (p pred actions turn)
+    (append (get-act 'd1 'd2 p pred actions turn) (get-act 'd2 'd1 p pred actions turn))
+)
+
+(defun get-ps (pred actions turn)
+    (append (get-ds 'p1 pred actions turn) (get-ds 'p2 pred actions turn) (get-ds 'p3 pred actions turn))
+)
+
+(defun get-axiom (preds turn)
+    (if (null preds)
+    nil
+    (let ((pred (car (car preds))) (actions (cdr (car preds))))
+    (cons (get-ps pred actions turn) (get-axiom (cdr preds) turn))))
+)
 
 (let ((start '((onpeg d1 p1)
   		 (onpeg d2 p1)
@@ -259,11 +303,23 @@
 					  (clear ?disk1)
 					  (not (clear ?disk2))
 		 			  (handempty)
-		 			  (not (holding ?disk1))))))))
+		 			  (not (holding ?disk1)))))))
+        (preds '(
+            ((on ?disk ?disk2) (Unstack ?disk ?disk2 ?peg) (Stack ?disk ?disk2 ?peg))
+            ((ontable ?disk) (PickUp ?disk ?peg) (PutDown ?disk ?peg) )
+            ((holding ?disk) (PickUp ?disk ?peg) (PutDown ?disk ?peg) (Unstack ?disk ?disk2 ?peg) (Stack ?disk1 ?disk2 ?peg))
+            ((onpeg ?disk ?peg) (PickUp ?disk ?peg) (PutDown ?disk ?peg) (Unstack ?disk ?disk2 ?peg) (Stack ?disk ?disk2 ?peg))
+            ((ispeg ?peg))
+            ((pegclear ?peg) (PickUp ?disk ?peg) (PutDown ?disk ?peg))
+            ((handempty) (PickUp ?disk ?peg) (PutDown ?disk ?peg) (Unstack ?disk ?disk2 ?peg) (Stack ?disk ?disk2 ?peg))
+            ((clear ?disk) (PickUp ?disk ?peg) (PutDown ?disk ?peg) (Unstack ?disk ?disk2 ?peg) (Stack ?disk ?disk2 ?peg))
+            ((isdisk ?disk))
+            ((issmaller ?disk1 ?disk2))
+        )))
 (format t "~a~%~b~%" (pred-bool start 0) (pred-bool goal 5)) 
 ; (format t "~a~%" (turns actions))
 ; (format t "~a~%" (sat-p (car (actions-bool actions 1))))
-(get-outputs actions)
+(get-outputs actions preds)
 )
 
 
