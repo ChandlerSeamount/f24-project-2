@@ -198,7 +198,8 @@
                      :direction :output
                      :if-exists :supersede
                      :if-does-not-exist :create)
-  (format str "~a" ax)))
+  (format str "~a" ax))
+  (list 'and val mut ax))
   )
 
 (defun get-act (d1 d2 p pred actions turn)
@@ -319,6 +320,7 @@
 (format t "~a~%~b~%" (pred-bool start 0) (pred-bool goal 5)) 
 ; (format t "~a~%" (turns actions))
 ; (format t "~a~%" (sat-p (car (actions-bool actions 1))))
+(format t "~a~%" (sat-p (get-outputs actions preds)))
 (get-outputs actions preds)
 )
 
