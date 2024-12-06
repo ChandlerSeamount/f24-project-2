@@ -146,19 +146,19 @@
     (let ((action (second (car actions))) (pars (car (cdr (third (car actions))))) (pre (cdr (car (cdr (fourth (car actions)))))) (eff (cdr (car (cdr (fifth (car actions)))))))
         ; (format t "~a~%~b~%" pre eff)
         
-        (cons 'and (DELETE-DUPLICATES (append (for-every-p1 pre eff turn action pars) (get-all-actions (cdr actions) turn))))
+        (DELETE-DUPLICATES (append (for-every-p1 pre eff turn action pars) (get-all-actions (cdr actions) turn)))
     ))
 )
 
 (defun mutual-exclusion (actions turn)
     (let ((possible-actions (get-all-actions actions turn)))
         (labels ((h (poss-act act)
-        (cond ((null poss-act) nil)
-        ((eq (car poss-act) act) (h (cdr poss-act) act))
-        (t (cons (list 'not (car poss-act)) (h (cdr poss-act) act)))))
+            (cond ((null poss-act) nil)
+            ((eq (car poss-act) act) (h (cdr poss-act) act))
+            (t (cons (list 'not (car poss-act)) (h (cdr poss-act) act)))))
         (h2 (poss-act)
-        (if (null poss-act) nil
-        (cons (list ':implies (car poss-act) (cons 'and (h possible-actions (car poss-act)))) (h2 (cdr poss-act))))))
+            (if (null poss-act) nil
+            (cons (list ':implies (car poss-act) (cons 'and (h possible-actions (car poss-act)))) (h2 (cdr poss-act))))))
         (cons 'and (h2 possible-actions))
         )
     )
@@ -168,17 +168,17 @@
     (labels ((get-validity (turn)
     (if (> turn 5)
     nil
-    (cons (actions-bool actions turn) (get-validity (+ 1 turn)))))
+    (append (actions-bool actions turn) (get-validity (+ 1 turn)))))
     (get-mutual (turn)
     (if (> turn 5)
     nil
-    (cons (mutual-exclusion actions turn) (get-mutual (+ 1 turn)))))
+    (append (mutual-exclusion actions turn) (get-mutual (+ 1 turn)))))
     (get-axioms (turn)
     (if (> turn 5)
     nil
-    (cons (get-axiom preds turn) (get-axioms (+ 1 turn)))))
+    (append (get-axiom preds turn) (get-axioms (+ 1 turn)))))
     )
-    (values (get-validity 0) (get-mutual 0) (cons 'and (get-axioms 0))))
+    (values (cons 'and (get-validity 0)) (get-mutual 0) (cons 'and (get-axioms 0))))
     
 )
 
@@ -234,7 +234,7 @@
     (if (null preds)
     nil
     (let ((pred (car (car preds))) (actions (cdr (car preds))))
-    (cons (get-ps pred actions turn) (get-axiom (cdr preds) turn))))
+    (append (get-ps pred actions turn) (get-axiom (cdr preds) turn))))
 )
 
 (let ((start '((onpeg d1 p1)
@@ -320,7 +320,7 @@
 (format t "~a~%~b~%" (pred-bool start 0) (pred-bool goal 5)) 
 ; (format t "~a~%" (turns actions))
 ; (format t "~a~%" (sat-p (car (actions-bool actions 1))))
-(format t "~a~%" (sat-p (get-outputs actions preds)))
+(format t "~a~%" (sat-p (list 'and (pred-bool start 0) (pred-bool goal 5) (get-outputs actions preds))))
 (get-outputs actions preds)
 )
 
