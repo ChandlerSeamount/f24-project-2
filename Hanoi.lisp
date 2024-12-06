@@ -36,6 +36,7 @@
     (intern (h x prop))))
     )
 )
+
 (defun pred-bool-action (x turn d p d1 d2 act)
     
     (labels ((h (y)
@@ -77,6 +78,7 @@
     (append (for-every-ds 'd1 'p1 pre eff turn act pars) (for-every-ds 'd1 'p2 pre eff turn act pars) (for-every-ds 'd1 'p3 pre eff turn act pars)))
     ; (append (for-every-ds d 'p1 pre eff turn act pars) (for-every-ds d 'p2 pre eff turn act pars) (for-every-ds d 'p3 pre eff turn act pars))
 )
+
 (defun for-every-d (p pre eff turn act pars)
     (list (val-bool 'd1 p 'd1 'd2 pre eff turn act pars) (val-bool 'd2 p 'd2 'd1 pre eff turn act pars))
     ; (if (null d)
@@ -96,6 +98,99 @@
         (DELETE-DUPLICATES (append (for-every-p pre eff turn action pars) (actions-bool (cdr actions) turn)))
     ))
 )
+
+(defun val-bool1 (d p d1 d2 pre eff turn act pars )
+    ; (if (null eff)
+    ; (if (null pre)
+    ; nil
+    ; (append (pred-bool-action pre turn d p d1 d2))))
+    (let ((prop (with-output-to-string (my-int) (princ turn my-int))))
+        (labels ((h (y str)
+    (cond ((null y) str)
+    ((eq (car y) '?disk) (concatenate 'string (symbol-name d) "-" (h (cdr y) str)))
+    ((eq (car y) '?peg) (concatenate 'string (symbol-name p) "-" (h (cdr y) str)))
+    ((eq (car y) '?disk1) (concatenate 'string (symbol-name d1) "-" (h (cdr y) str)))
+    ((eq (car y) '?disk2) (concatenate 'string (symbol-name d2) "-" (h (cdr y) str)))
+    (t (h (cdr y) str))
+    )))
+    ; (intern (h x prop))
+    (intern (concatenate 'string (symbol-name act) "-" (h pars prop)))
+; (let ((l (cons 'and (append (pred-bool-action pre turn d p d1 d2 act) (pred-bool-action eff (+ 1 turn) d p d1 d2 act)))))
+;         (list ':implies (intern (concatenate 'string (symbol-name act) "-" (h pars prop))) l))
+        ; (append (list ':implies (intern (concatenate 'string (symbol-name act) "-" (h pars prop)))) '(list l)))
+)    ; (append (list ':implies (intern (concatenate 'string (symbol-name act) "-" (h pars prop)))) (list (cons 'and (append (pred-bool-action pre turn d p d1 d2 act) (pred-bool-action eff (+ 1 turn) d p d1 d2 act))))))
+    ; (append (:implies (intern (concatenate 'string (symbol-name act) "-" (symbol-name d)))) (list (cons 'and (append (pred-bool-action pre turn d p d1 d2 act) (pred-bool-action eff (+ 1 turn) d p d1 d2 act)))))
+))
+
+(defun for-every-d1 (p pre eff turn act pars)
+    (list (val-bool1 'd1 p 'd1 'd2 pre eff turn act pars) (val-bool1 'd2 p 'd2 'd1 pre eff turn act pars))
+    ; (if (null d)
+    ; bools 
+    ; (for-every-p (car )))
+)
+
+(defun for-every-ds1 (d p pre eff turn act pars)
+    (list (val-bool1 d p 'd1 'd2 pre eff turn act pars) (val-bool1 d p 'd2 'd1 pre eff turn act pars))
+)
+
+(defun for-every-p1 (pre eff turn act pars)
+    (if (eq (car pars) '?disk)
+    (append (for-every-d1 'p1 pre eff turn act pars) (for-every-d1 'p2 pre eff turn act pars) (for-every-d1 'p3 pre eff turn act pars))
+    (append (for-every-ds1 'd1 'p1 pre eff turn act pars) (for-every-ds1 'd1 'p2 pre eff turn act pars) (for-every-ds1 'd1 'p3 pre eff turn act pars)))
+    ; (append (for-every-ds d 'p1 pre eff turn act pars) (for-every-ds d 'p2 pre eff turn act pars) (for-every-ds d 'p3 pre eff turn act pars))
+)
+
+(defun get-all-actions (actions turn)
+    (if (null actions)
+    nil
+    (let ((action (second (car actions))) (pars (car (cdr (third (car actions))))) (pre (cdr (car (cdr (fourth (car actions)))))) (eff (cdr (car (cdr (fifth (car actions)))))))
+        ; (format t "~a~%~b~%" pre eff)
+        
+        (DELETE-DUPLICATES (append (for-every-p1 pre eff turn action pars) (get-all-actions (cdr actions) turn)))
+    ))
+)
+
+(defun mutual-exclusion (actions turn)
+    (let ((possible-actions (get-all-actions actions turn)))
+        (labels ((h (poss-act act)
+        (cond ((null poss-act) nil)
+        ((eq (car poss-act) act) (h (cdr poss-act) act))
+        (t (cons (list 'not (car poss-act)) (h (cdr poss-act) act)))))
+        (h2 (poss-act)
+        (if (null poss-act) nil
+        (cons (list ':implies (car poss-act) (h possible-actions (car poss-act))) (h2 (cdr poss-act))))))
+        (cons 'and (h2 possible-actions))
+        )
+    )
+)
+
+(defun turns (actions)
+    (labels ((get-validity (turn)
+    (if (> turn 5)
+    nil
+    (cons (actions-bool actions turn) (get-validity (+ 1 turn)))))
+    (get-mutual (turn)
+    (if (> turn 5)
+    nil
+    (cons (mutual-exclusion actions turn) (get-mutual (+ 1 turn)))))
+    )
+    (values (get-validity 0) (get-mutual 0)))
+    
+)
+
+(defun get-outputs (actions)
+(multiple-value-bind (val mut) (turns actions)
+    (with-open-file (str "validity.txt"
+                     :direction :output
+                     :if-exists :supersede
+                     :if-does-not-exist :create)
+  (format t "~a" val))
+  (with-open-file (str "/mutual.txt"
+                     :direction :output
+                     :if-exists :supersede
+                     :if-does-not-exist :create)
+  (format t "~a" mut)))
+  )
 
 (let ((start '((onpeg d1 p1)
   		 (onpeg d2 p1)
@@ -166,8 +261,9 @@
 		 			  (handempty)
 		 			  (not (holding ?disk1))))))))
 (format t "~a~%~b~%" (pred-bool start 0) (pred-bool goal 5)) 
-(format t "~a~%" (actions-bool actions 0))
-(format t "~a~%" (sat-p (car (actions-bool actions 1))))
+; (format t "~a~%" (turns actions))
+; (format t "~a~%" (sat-p (car (actions-bool actions 1))))
+(get-outputs actions)
 )
 
 
