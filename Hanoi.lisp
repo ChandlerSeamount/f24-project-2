@@ -199,7 +199,7 @@
                      :if-exists :supersede
                      :if-does-not-exist :create)
   (format str "~a" ax))
-  (list 'and val mut ax))
+  (list 'and ax val mut))
   )
 
 (defun get-act (d1 d2 p pred actions turn)
@@ -214,10 +214,10 @@
     (h2 (y str)
         (if (null y)
         nil
-        (cons (h (car y) str) (h2 (cdr y) str)))
+        (cons (intern (h (car y) str)) (h2 (cdr y) str)))
     ))
     (let ((prop (with-output-to-string (my-int) (princ turn my-int))) (prop2 (with-output-to-string (my-int) (princ (+ 1 turn) my-int))))
-        (list ':or (list ':iff (h pred prop) (h pred prop2)) (cons ':or (h2 actions prop)))
+        (list 'or (list ':iff (intern (h pred prop)) (intern (h pred prop2))) (cons 'or (h2 actions prop)))
     )
     )
 )
